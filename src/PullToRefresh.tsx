@@ -35,7 +35,7 @@ const PullToRefresh: React.FC = () => {
     setRefreshing(true);
     setTimeout(() => {
       setRefreshing(false);
-      setRefreshText('Pull');
+      setRefreshText('Pull to Refresh');
     }, 2000);
   };
 
@@ -49,11 +49,17 @@ const PullToRefresh: React.FC = () => {
     if (refreshing) return;
 
     setRefreshText('Refresh!');
+    handleRefresh();
   };
 
   const handlePull = () => {
     if (!refreshing) {
-      handleRefresh();
+      setRefreshText('Release!');
+
+      setTimeout(() => {
+        setRefreshText('Refresh!');
+        handleRefresh();
+      }, 1000);
     }
   };
 
@@ -61,8 +67,8 @@ const PullToRefresh: React.FC = () => {
     <PullToRefreshContainer
       onTouchStart={handleTouchStart}
       onTouchEnd={handleTouchEnd}
-      onTouchMove={(e) => e.preventDefault()}
       onMouseDown={handlePull}
+      onTouchMove={(e) => e.preventDefault()}
     >
       <RefreshText>{refreshText}</RefreshText>
       <Loader spinning={refreshing} />
