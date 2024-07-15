@@ -1,13 +1,11 @@
 import React, { useState } from 'react';
 import styled, { keyframes } from 'styled-components';
 
-// 회전 애니메이션 정의
 const spin = keyframes`
   from { transform: rotate(0deg); }
   to { transform: rotate(360deg); }
 `;
 
-// 스타일된 컴포넌트 생성
 const PullToRefreshContainer = styled.div`
   text-align: center;
   padding: 20px;
@@ -37,25 +35,25 @@ const PullToRefresh: React.FC = () => {
     setRefreshing(true);
     setTimeout(() => {
       setRefreshing(false);
-      setRefreshText('Pull to Refresh');
-    }, 2000); // Simulate fetching data delay
+      setRefreshText('Pull');
+    }, 2000);
   };
 
   const handleTouchStart = () => {
     if (!refreshing) {
-      setRefreshText('Release to Refresh');
+      setRefreshText('Release!');
     }
   };
 
   const handleTouchEnd = () => {
     if (refreshing) return;
 
-    setRefreshText('Pull to Refresh');
+    setRefreshText('Refresh!');
   };
 
   const handlePull = () => {
     if (!refreshing) {
-      handleRefresh(); // Pull을 감지하여 데이터 새로고침 시작
+      handleRefresh();
     }
   };
 
@@ -63,8 +61,8 @@ const PullToRefresh: React.FC = () => {
     <PullToRefreshContainer
       onTouchStart={handleTouchStart}
       onTouchEnd={handleTouchEnd}
-      onTouchMove={(e) => e.preventDefault()} // Prevent scrolling on touch move
-      onMouseDown={handlePull} // 마우스 이벤트를 추가하여 테스트하기 위해
+      onTouchMove={(e) => e.preventDefault()}
+      onMouseDown={handlePull}
     >
       <RefreshText>{refreshText}</RefreshText>
       <Loader spinning={refreshing} />
