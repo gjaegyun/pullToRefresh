@@ -1,11 +1,13 @@
 import React, { useState } from 'react';
 import styled, { keyframes } from 'styled-components';
 
+// 회전 애니메이션 정의
 const spin = keyframes`
   from { transform: rotate(0deg); }
   to { transform: rotate(360deg); }
 `;
 
+// 스타일된 컴포넌트 생성
 const PullToRefreshContainer = styled.div`
   text-align: center;
   padding: 20px;
@@ -41,25 +43,19 @@ const PullToRefresh: React.FC = () => {
 
   const handleTouchStart = () => {
     if (!refreshing) {
-      setRefreshText('Release!');
+      setRefreshText('Release to Refresh');
     }
   };
 
   const handleTouchEnd = () => {
     if (refreshing) return;
 
-    setRefreshText('Refresh!');
-    handleRefresh();
+    setRefreshText('Pull to Refresh');
   };
 
   const handlePull = () => {
     if (!refreshing) {
-      setRefreshText('Release!');
-
-      setTimeout(() => {
-        setRefreshText('Refresh!');
-        handleRefresh();
-      }, 1000);
+      handleRefresh();
     }
   };
 
@@ -67,8 +63,8 @@ const PullToRefresh: React.FC = () => {
     <PullToRefreshContainer
       onTouchStart={handleTouchStart}
       onTouchEnd={handleTouchEnd}
-      onMouseDown={handlePull}
       onTouchMove={(e) => e.preventDefault()}
+      onMouseDown={handlePull}
     >
       <RefreshText>{refreshText}</RefreshText>
       <Loader spinning={refreshing} />
