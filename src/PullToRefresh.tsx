@@ -1,91 +1,130 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, TouchEvent, useEffect } from 'react';
 import styled, { keyframes } from 'styled-components';
 
-const MAX_HEIGHT = 60;
+interface Props {
+  children: React.ReactNode;
+  onRefresh: () => void;
+  maxDistance: number;
+}
+
+const MAX_PULLED_DISTANCE = 30;
 
 const spin = keyframes`
   from { transform: rotate(0deg); }
   to { transform: rotate(360deg); }
 `;
 
-const PullToRefreshContainer = styled.div`
-  text-align: center;
-  padding: 20px;
-  font-size: 18px;
-  overflow: auto; /* 스크롤 가능하도록 설정 */
-  height: 300px; /* 예시로 고정된 높이 설정 */
+const Wrapper = styled.div`
+  width: 100%;
+  height: 100%;
+  display: flex;
+  justify-content: center;
 `;
 
-const RefreshText = styled.div`
-  margin-bottom: 10px;
+const SpinnerBox = styled.div<{ pulledDistance: number }>`
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  transition: transform 0.3s ease-out;
+  transform: translateY(${(props) => props.pulledDistance}px);
 `;
 
-const Loader = styled.div<{ height: number }>`
+const Spinner = styled.div<{ height: number }>`
   width: 30px;
   height: ${(props) => props.height}px;
   border: 4px solid #ccc;
   border-radius: 50%;
   border-top-color: #3498db;
   animation: ${spin} 1s infinite ease-in-out;
-  display: inline-block;
+  display: flex;
+  justify-content: center;
+  margin-bottom: 10px;
   vertical-align: middle;
 `;
 
-const PullToRefresh: React.FC = () => {
-  const [refreshText, setRefreshText] = useState('Pull to Refresh');
-  const [loadingHeight, setLoadingHeight] = useState(0);
-  const [loading, setLoading] = useState(false);
-  const touchStartY = useRef(0);
-  const divRef = useRef<HTMLDivElement>(null);
+const PullToRefresh: React.FC<Props> = ({ children, onRefresh, maxDistance }) => {
+  const spinnerRef = useRef<HTMLDivElement>(null);
 
-  const handleRefresh = () => {
-    setLoading(true);
-    setTimeout(() => {
-      setLoading(false);
-      setRefreshText('Pull to Refresh');
-    }, 2000);
-  };
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [startY, setStartY] = useState(0);
+  const [pulledDistance, setPulledDistance] = useState(0); // 텍스트와 스피너가 아래로 내려가는 거리 상태 추가
+  const [showSpinner, setShowSpinner] = useState(false);
 
-  const handleTouchStart = (e: React.TouchEvent<HTMLDivElement>) => {
-    if (divRef.current?.scrollTop !== 0) return;
-    touchStartY.current = e.changedTouches[0].screenY;
-    const el = document.createElement('div');
-    el.classList.add('loading-element'); // 스타일을 지정해주자.
-    divRef.current?.prepend(el); // 스크롤되는 요소의 최상단에 추가해준다.
-    setLoadingHeight(0);
-  };
+  useEffect(() => {
+    if (isRefreshing) {
+      setShowSpinner(true);
+      setTimeout(() => {
+        setShowSpinner(false);
+        setIsRefreshing(false);
+        resetToInitial();
+      }, 1500);
+    }
+  }, [isRefreshing]);
 
-  const handleTouchMove = (e: React.TouchEvent<HTMLDivElement>) => {
-    if (!loading) return;
-
-    const screenY = e.changedTouches[0].screenY;
-    const height = Math.floor((screenY - touchStartY.current) * 0.3);
-
-    if (height >= 0) {
-      setLoadingHeight(height);
+  const resetToInitial = () => {
+    setPulledDistance(0);
+    if (spinnerRef.current) {
+      spinnerRef.current.style.height = '0';
+      spinnerRef.current.style.willChange = 'unset';
     }
   };
 
-  const handleTouchEnd = () => {
-    if (loadingHeight >= MAX_HEIGHT) {
-      handleRefresh();
-      if (divRef.current) {
-        divRef.current.removeChild(divRef.current.firstChild!);
-      }
+  const onTouchStart = (e: TouchEvent) => {
+    setStartY(e.touches[0].clientY);
+    if (spinnerRef.current) {
+      spinnerRef.current.style.willChange = 'height';
     }
-    setLoadingHeight(0);
+  };
+
+  const onTouchMove = (e: TouchEvent) => {
+    const moveY = e.touches[0].clientY;
+    const distance = Math.min(Math.pow(moveY - startY, 0.875), maxDistance);
+
+    setPulledDistance(distance);
+
+    if (distance <= 0) {
+      enableBodyScroll();
+      resetToInitial();
+    }
+
+    if (distance > 0) {
+      preventBodyScroll();
+    }
+
+    if (distance >= maxDistance) {
+      setIsRefreshing(true);
+    } else {
+      setIsRefreshing(false);
+    }
+  };
+
+  const onTouchEnd = () => {
+    enableBodyScroll();
+    if (isRefreshing) {
+      onRefresh();
+    } else {
+      resetToInitial();
+    }
+  };
+
+  const preventBodyScroll = () => {
+    document.body.style.overflow = 'hidden';
+  };
+
+  const enableBodyScroll = () => {
+    document.body.style.overflow = 'auto';
   };
 
   return (
-    <PullToRefreshContainer
-      ref={divRef}
-      onTouchStart={handleTouchStart}
-      onTouchMove={handleTouchMove}
-      onTouchEnd={handleTouchEnd}
-    >
-      <RefreshText>{refreshText}</RefreshText>
-      {loading && <Loader height={loadingHeight} />}
-    </PullToRefreshContainer>
+    <Wrapper>
+      <SpinnerBox pulledDistance={pulledDistance}>
+        <div ref={spinnerRef}>{showSpinner && <Spinner height={MAX_PULLED_DISTANCE} />}</div>
+        <div onTouchStart={(e) => onTouchStart(e)} onTouchMove={(e) => onTouchMove(e)} onTouchEnd={() => onTouchEnd()}>
+          {children}
+        </div>
+      </SpinnerBox>
+    </Wrapper>
   );
 };
 
