@@ -1,13 +1,11 @@
 import React, { useState } from 'react';
 import styled, { keyframes } from 'styled-components';
 
-// 회전 애니메이션 정의
 const spin = keyframes`
   from { transform: rotate(0deg); }
   to { transform: rotate(360deg); }
 `;
 
-// 스타일된 컴포넌트 생성
 const PullToRefreshContainer = styled.div`
   text-align: center;
   padding: 20px;
