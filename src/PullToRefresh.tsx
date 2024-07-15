@@ -48,7 +48,7 @@ const PullToRefresh: React.FC = () => {
   const handleTouchEnd = () => {
     if (refreshing) return;
 
-    setRefreshText('Pull to Refresh');
+    setRefreshText('Refresh');
   };
 
   const handlePull = () => {
